@@ -92,20 +92,40 @@ Selama ini institusi bersifat **reaktif** — mahasiswa baru ditangani setelah m
 
 ## 🔬 Metodologi
 
-```
-Data Loading → EDA → Data Preparation → SMOTE → Hyperparameter Tuning → Evaluasi → Deployment
-   4.424        36 fitur    Train/Test 80:20   balancing   RandomizedSearchCV   5 metrik    Streamlit
-   baris       dianalisis    stratifikasi       kelas       5-fold CV, 50 iter    + Confusion  + Metabase
+Alur kerja dibagi menjadi 6 tahap. Setiap tahap punya satu tujuan jelas dan output yang bisa diperiksa.
+
+```mermaid
+flowchart TD
+    A["1 · Data Loading<br/>4.424 baris, 36 fitur"] --> B["2 · EDA<br/>pola dan kandidat fitur"]
+    B --> C["3 · Data Preparation<br/>split 80:20 lalu scaling"]
+    C --> D["4 · Handling Imbalance<br/>SMOTE pada data latih"]
+    D --> E["5 · Modeling<br/>XGBoost dan tuning"]
+    E --> F["6 · Evaluasi dan Deployment<br/>metrik, Streamlit, Metabase"]
 ```
 
-**Langkah teknis:**
+### Penjelasan per Tahap
 
-1. **EDA** — distribusi target, korelasi fitur numerik, deteksi outlier (boxplot), pengecekan missing value.
-2. **Split** — 80% train (3.539) / 20% test (885), **stratified** agar proporsi kelas terjaga.
-3. **Scaling** — `StandardScaler` di-*fit* hanya pada data latih, lalu diterapkan ke data uji (mencegah *data leakage*).
-4. **Handling imbalance** — **SMOTE** diterapkan **hanya pada data latih** (2.402 → 4.804 baris, seimbang 50:50). Data uji tetap memakai distribusi asli agar evaluasi jujur.
-5. **Model** — `XGBClassifier` + **RandomizedSearchCV** (50 kombinasi, 5-fold CV, scoring `f1`).
-6. **Evaluasi** — confusion matrix, accuracy, precision, recall, F1 per kelas.
+| # | Tahap | Yang dilakukan | Output |
+|---|---|---|---|
+| 1 | **Data Loading** | Memuat `dataset/data.csv` (delimiter `;`), cek tipe data & struktur | 4.424 baris × 36 fitur |
+| 2 | **EDA** | Distribusi target, korelasi fitur vs target, boxplot outlier, cek missing value | Daftar kandidat fitur & hipotesis |
+| 3 | **Data Preparation** | Split **80:20 stratified**, lalu `StandardScaler` | 3.539 train / 885 test |
+| 4 | **Handling Imbalance** | **SMOTE** untuk menyeimbangkan kelas | 2.402 → 4.804 baris (50:50) |
+| 5 | **Modeling** | `XGBClassifier` + `RandomizedSearchCV` (50 kombinasi, 5-fold CV, scoring `f1`) | Model terlatih + hyperparameter terbaik |
+| 6 | **Evaluasi & Deployment** | Confusion matrix, precision/recall/F1, lalu export artefak | Akurasi 88,47% + app + dashboard |
+
+### Keputusan Penting & Alasannya
+
+Tiga hal di bawah ini yang paling menentukan kualitas hasil — dan paling sering salah dilakukan:
+
+**a. Scaling hanya di-*fit* pada data latih.**
+`StandardScaler` dipelajari dari data train saja, lalu diterapkan ke data test. Kalau scaler di-*fit* pada seluruh dataset, informasi dari data uji "bocor" ke proses training (*data leakage*) dan skor evaluasi jadi terlalu bagus.
+
+**b. SMOTE hanya diterapkan pada data latih.**
+Data latih yang tidak seimbang (2.402 : 1.137) diseimbangkan menjadi 50:50. Data uji **sengaja dibiarkan** pada distribusi aslinya, karena tujuan evaluasi adalah mengukur performa pada kondisi dunia nyata — bukan pada data buatan.
+
+**c. Split memakai `stratify=y`.**
+Proporsi kelas di data train dan test dijaga sama dengan populasi asli, sehingga hasil evaluasi tidak bergantung pada kebetulan pembagian data.
 
 **Hyperparameter terbaik:**
 
