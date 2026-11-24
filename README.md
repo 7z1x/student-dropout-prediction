@@ -386,18 +386,6 @@ student-dropout-prediction/
 
 ---
 
-## 🔭 Pengembangan Selanjutnya
-
-- [ ] Model **early-warning tahap awal** memakai hanya data pendaftaran + semester 1
-- [ ] Kalibrasi ambang keputusan (precision-recall curve) sesuai kapasitas intervensi
-- [ ] Validasi temporal: latih pada angkatan lama, uji pada angkatan baru
-- [ ] Refactor ke `sklearn.Pipeline` untuk mencegah leakage dan mempermudah deployment
-- [ ] Uji signifikansi statistik untuk gap gender dan perbedaan antar prodi
-- [ ] Integrasi API skoring ke Sistem Informasi Akademik
-- [ ] Tambahkan unit test untuk `app.py` dan `test_predict.py`
-
----
-
 ## 👤 Author
 
 **Zulfahmi M. Ardianto**
