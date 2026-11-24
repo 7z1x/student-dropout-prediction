@@ -92,9 +92,8 @@ Selama ini institusi bersifat **reaktif** — mahasiswa baru ditangani setelah m
 
 ## 🔬 Metodologi
 
-```mermaid
-flowchart LR
-    A[Data Loading] --> B[EDA] --> C[Data Preparation] --> D[SMOTE] --> E[XGBoost + Tuning] --> F[Evaluasi + Deployment]
+```
+Data Loading → EDA → Data Preparation → SMOTE → XGBoost + Tuning → Evaluasi + Deployment
 ```
 
 1. **Data Loading** — memuat `dataset/data.csv` (delimiter `;`): 4.424 baris, 36 fitur.
