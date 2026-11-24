@@ -1,234 +1,414 @@
-# 🧠 Proyek Akhir: Menyelesaikan Permasalahan Institusi Pendidikan Institut Jaya Jaya
-[![Versi Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-Deployed-FF4B4B?style=for-the-badge&logo=Streamlit)](https://drop-out-predict.streamlit.app/)
-[![XGBoost](https://img.shields.io/badge/XGBoost-Model-brightgreen?style=for-the-badge&logo=XGBoost)](https://xgboost.ai/)
-[![Metabase](https://img.shields.io/badge/Metabase-Dashboard-509EE3?style=for-the-badge&logo=Metabase)](https://www.metabase.com/)
+# 🎓 Student Dropout Early-Warning System — Jaya Jaya Institut
 
-## 📝 Business Understanding
+Mendeteksi mahasiswa berisiko **dropout** sejak dini menggunakan machine learning, lalu menerjemahkannya menjadi rekomendasi intervensi yang bisa dieksekusi oleh staf akademik.
 
-Jaya Jaya Institut merupakan salah satu institusi pendidikan perguruan yang telah berdiri sejak tahun 2000. Hingga saat ini ia telah mencetak banyak lulusan dengan reputasi yang sangat baik. Akan tetapi, terdapat banyak juga siswa yang tidak menyelesaikan pendidikannya alias dropout. Jumlah dropout yang tinggi ini tentunya menjadi salah satu masalah yang besar untuk sebuah institusi pendidikan. Oleh karena itu, Jaya Jaya Institut ingin mendeteksi secepat mungkin siswa yang mungkin akan melakukan dropout sehingga dapat diberi bimbingan khusus.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![XGBoost](https://img.shields.io/badge/Model-XGBoost-brightgreen?logo=xgboost)](https://xgboost.ai/)
+[![Streamlit](https://img.shields.io/badge/App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://drop-out-predict.streamlit.app/)
+[![Metabase](https://img.shields.io/badge/Dashboard-Metabase-509EE3?logo=metabase&logoColor=white)](https://www.metabase.com/)
+[![Accuracy](https://img.shields.io/badge/Test%20Accuracy-88.47%25-success)]()
+
+**🔗 Live Demo:** [drop-out-predict.streamlit.app](https://drop-out-predict.streamlit.app/) · **📊 Dashboard:** Metabase · **🎬 Video:** [Google Drive](https://drive.google.com/file/d/1tGv-VZaOavT4nUHSdPltAfbsRvWfl0Oy/view?usp=drive_link)
+
+---
+
+## 📌 Ringkasan Eksekutif
+
+| Pertanyaan | Jawaban |
+|---|---|
+| Berapa besar masalahnya? | **32,1%** mahasiswa (1.421 dari 4.424) berstatus *dropout* |
+| Bisa diprediksi? | Ya — akurasi **88,47%** pada data uji, **recall 79%** untuk kelas dropout |
+| Apa pemicu terkuat? | Jumlah mata kuliah lulus semester 2, status pembayaran UKT, dan status *debtor* |
+| Apa tindak lanjutnya? | Sistem skoring risiko + dashboard monitoring + SOP intervensi per profil risiko |
+
+> **Insight utama:** dropout bukan kejadian mendadak, melainkan proses yang terlihat dari data. Mahasiswa yang dropout rata-rata hanya lulus **1,94 mata kuliah** di semester 2 (vs **6,18** pada mahasiswa lulus), dan **86,6%** mahasiswa yang menunggak UKT akhirnya dropout.
+
+---
+
+## 🎯 Business Understanding
+
+### Latar Belakang
+
+Jaya Jaya Institut berdiri sejak tahun 2000 dan memiliki reputasi baik, namun masih menghadapi tingkat *dropout* yang tinggi. Setiap mahasiswa yang dropout adalah kerugian ganda: hilangnya potensi lulusan **dan** hilangnya pendapatan UKT yang sudah diinvestasikan institusi.
+
+Selama ini institusi bersifat **reaktif** — mahasiswa baru ditangani setelah mereka berhenti. Yang dibutuhkan adalah sistem **proaktif**: mengenali sinyal risiko lebih awal, sehingga bimbingan, keringanan biaya, atau konseling bisa diberikan sebelum keputusan dropout diambil.
 
 ### Permasalahan Bisnis
-1. Tingginya angka mahasiswa dropout menjadi perhatian utama bagi Institut Jaya Jaya. Diperlukan solusi untuk mengidentifikasi mahasiswa berisiko secara proaktif.
 
-### Cakupan Proyek
-Proyek ini meliputi:
-1.  Menganalisis data historis mahasiswa untuk mengidentifikasi faktor-faktor yang berkontribusi terhadap dropout.
-2.  Mengembangkan model machine learning prediktif (XGBoost) untuk mengidentifikasi mahasiswa yang berisiko dropout.
-3.  Membuat aplikasi prototipe interaktif (menggunakan Streamlit) agar staf akademik dapat menggunakan model prediksi.
-4.  Membangun dasbor bisnis (menggunakan Metabase) untuk memvisualisasikan metrik utama dan wawasan terkait kinerja mahasiswa dan prediksi dropout.
+1. **Deteksi terlambat** — belum ada mekanisme sistematis untuk menandai mahasiswa berisiko sebelum semester berjalan terlalu jauh.
+2. **Intervensi tidak terarah** — bantuan diberikan merata, padahal risiko terkonsentrasi pada segmen tertentu (mis. mahasiswa dengan tunggakan UKT).
+3. **Tidak ada ukuran dampak** — belum ada dashboard yang memantau tren dropout per program studi secara berkala.
 
-### Persiapan
+### Tujuan Proyek
 
-Sumber data:  [students_performance/data.csv](https://github.com/dicodingacademy/dicoding_dataset/blob/main/students_performance/README.md)
+| # | Tujuan | Output |
+|---|---|---|
+| 1 | Mengidentifikasi faktor paling berpengaruh terhadap dropout | Analisis EDA + feature importance |
+| 2 | Membangun model prediksi risiko dropout | Model XGBoost (`.joblib`) |
+| 3 | Menyediakan alat skoring untuk staf akademik | Aplikasi Streamlit |
+| 4 | Memantau tren & mendukung keputusan | Dashboard Metabase |
 
-Setup environment:
+### Metrik Keberhasilan
+
+- **Metrik bisnis:** penurunan persentase dropout per angkatan; jumlah mahasiswa berisiko tinggi yang menerima intervensi tepat waktu.
+- **Metrik model:** **Recall** pada kelas *dropout* diprioritaskan di atas akurasi, karena biaya *false negative* (mahasiswa berisiko tidak terdeteksi) jauh lebih besar daripada *false positive* (mahasiswa aman ikut dibina).
+
+### Cakupan
+
+**Termasuk:** analisis data historis, pemodelan prediktif, prototipe aplikasi, dashboard bisnis, rekomendasi aksi.
+**Tidak termasuk:** integrasi langsung ke Sistem Informasi Akademik, uji coba A/B pada populasi mahasiswa nyata, analisis data kualitatif.
+
+---
+
+## 🗂️ Dataset
+
+| Atribut | Keterangan |
+|---|---|
+| **Sumber** | [Dicoding Dataset — Students' Performance](https://github.com/dicodingacademy/dicoding_dataset/tree/main/students_performance) |
+| **Jumlah baris** | 4.424 mahasiswa |
+| **Jumlah fitur** | 36 fitur + 1 target |
+| **Missing value** | 0 |
+| **Duplikat** | 0 |
+| **Periode** | Data historis pendaftaran & performa akademik |
+
+**Target (`Status`) — distribusi tidak seimbang:**
+
+| Status | Jumlah | Proporsi |
+|---|---:|---:|
+| Graduate | 2.209 | 49,9% |
+| **Dropout** | **1.421** | **32,1%** |
+| Enrolled | 794 | 18,0% |
+
+**Kelompok fitur:**
+
+- **Demografi & pendaftaran:** usia saat masuk, gender, status pernikahan, kewarganegaraan, mahasiswa internasional, disabilitas
+- **Latar belakang keluarga:** kualifikasi & pekerjaan ibu/ayah
+- **Akademik:** jalur masuk, program studi, nilai kualifikasi sebelumnya, nilai admisi
+- **Status keuangan:** tunggakan (`Debtor`), kelancaran UKT (`Tuition_fees_up_to_date`), penerima beasiswa
+- **Performa kuliah:** unit kurikulum semester 1 & 2 (diambil, dievaluasi, lulus, nilai rata-rata)
+- **Makroekonomi:** tingkat pengangguran, inflasi, GDP
+
+---
+
+## 🔬 Metodologi
+
+```
+Data Loading → EDA → Data Preparation → SMOTE → Hyperparameter Tuning → Evaluasi → Deployment
+   4.424        36 fitur    Train/Test 80:20   balancing   RandomizedSearchCV   5 metrik    Streamlit
+   baris       dianalisis    stratifikasi       kelas       5-fold CV, 50 iter    + Confusion  + Metabase
+```
+
+**Langkah teknis:**
+
+1. **EDA** — distribusi target, korelasi fitur numerik, deteksi outlier (boxplot), pengecekan missing value.
+2. **Split** — 80% train (3.539) / 20% test (885), **stratified** agar proporsi kelas terjaga.
+3. **Scaling** — `StandardScaler` di-*fit* hanya pada data latih, lalu diterapkan ke data uji (mencegah *data leakage*).
+4. **Handling imbalance** — **SMOTE** diterapkan **hanya pada data latih** (2.402 → 4.804 baris, seimbang 50:50). Data uji tetap memakai distribusi asli agar evaluasi jujur.
+5. **Model** — `XGBClassifier` + **RandomizedSearchCV** (50 kombinasi, 5-fold CV, scoring `f1`).
+6. **Evaluasi** — confusion matrix, accuracy, precision, recall, F1 per kelas.
+
+**Hyperparameter terbaik:**
+
+| Parameter | Nilai |
+|---|---|
+| `n_estimators` | 300 |
+| `max_depth` | 9 |
+| `learning_rate` | 0,0448 |
+| `subsample` | 0,849 |
+| `colsample_bytree` | 0,630 |
+| `gamma` | 0,179 |
+
+**Mengapa XGBoost?** Mampu menangkap interaksi non-linear antar fitur, tahan terhadap outlier dan fitur berskala berbeda, menangani data tabular dengan baik, serta menyediakan *feature importance* yang bisa diterjemahkan menjadi insight bisnis.
+
+---
+
+## 📊 Temuan Utama (EDA)
+
+### 1. Performa akademik semester awal adalah sinyal terkuat
+
+| Metrik (rata-rata) | Dropout | Enrolled | Graduate |
+|---|---:|---:|---:|
+| Nilai semester 1 | 7,26 | 11,13 | 12,64 |
+| Nilai semester 2 | **5,90** | 11,12 | **12,70** |
+| Mata kuliah lulus semester 1 | 2,55 | 4,32 | 6,23 |
+| Mata kuliah lulus semester 2 | **1,94** | 4,06 | **6,18** |
+
+Selisih nilai semester 2 antara mahasiswa dropout dan lulus mencapai **~6,8 poin** — jurang yang sangat lebar dan terlihat jelas sejak awal.
+
+### 2. Kesulitan finansial berkorelasi kuat dengan dropout
+
+| Segmen | Tingkat Dropout | Selisih |
+|---|---:|---|
+| UKT **tidak** lancar | **86,6%** | vs 24,7% (lancar) — **3,5×** |
+| Berstatus **debtor** | **62,0%** | vs 28,3% — **2,2×** |
+| **Bukan** penerima beasiswa | **38,7%** | vs 12,2% (penerima) — **3,2×** |
+
+Tunggakan UKT adalah **satu-satunya faktor non-akademik** dengan daya pisah sekuat ini.
+
+### 3. Gender menunjukkan perbedaan bermakna
+
+Tingkat dropout mahasiswa laki-laki **45,1%** vs perempuan **25,1%** — perlu ditelusuri lebih lanjut apakah ini efek komposisi program studi.
+
+### 4. Faktor yang ternyata **tidak** signifikan
+
+Status mahasiswa internasional hampir tidak berpengaruh: **29,1%** (internasional, n=110) vs **32,2%** (lokal, n=4.314). Ukuran sampel internasional terlalu kecil untuk dijadikan dasar kebijakan — klaim ini sengaja tidak dimasukkan ke rekomendasi.
+
+### 5. Korelasi terhadap status dropout
+
+| Fitur | Korelasi \|r\| |
+|---|---:|
+| `Curricular_units_2nd_sem_grade` | 0,572 |
+| `Curricular_units_2nd_sem_approved` | 0,570 |
+| `Curricular_units_1st_sem_grade` | 0,481 |
+| `Curricular_units_1st_sem_approved` | 0,479 |
+| `Tuition_fees_up_to_date` | 0,429 |
+
+---
+
+## 🤖 Hasil Model
+
+### Performa pada Data Uji (n = 885)
+
+| Metrik | Nilai |
+|---|---:|
+| **Accuracy** | **88,47%** |
+| Macro avg Precision | 0,87 |
+| Macro avg Recall | 0,86 |
+| Macro avg F1-score | 0,87 |
+
+**Per kelas:**
+
+| Kelas | Precision | Recall | F1-score | Support |
+|---|---:|---:|---:|---:|
+| Tidak Dropout (0) | 0,90 | 0,93 | 0,92 | 601 |
+| **Dropout (1)** | **0,84** | **0,79** | **0,81** | 284 |
+
+**Confusion matrix:**
+
+|  | Prediksi: Tidak Dropout | Prediksi: Dropout |
+|---|---:|---:|
+| **Aktual: Tidak Dropout** | 560 (TN) | 41 (FP) |
+| **Aktual: Dropout** | 61 (FN) | 223 (TP) |
+
+**Cara membaca untuk manajemen:** dari 284 mahasiswa yang benar-benar dropout, model berhasil menandai **223 orang (79%)**. Sisa **61 orang (21%) terlewat** — inilah kelompok yang harus ditangkap melalui jalur non-model (mis. laporan dosen wali). Dari 601 mahasiswa yang sebenarnya aman, **41 orang (7%) salah ditandai** — biaya kesalahannya rendah karena hanya berupa bimbingan tambahan yang tidak merugikan.
+
+### 10 Fitur Paling Berpengaruh
+
+| # | Fitur | Importance |
+|---:|---|---:|
+| 1 | `Curricular_units_2nd_sem_approved` | 0,220 |
+| 2 | `Tuition_fees_up_to_date` | 0,166 |
+| 3 | `Curricular_units_1st_sem_approved` | 0,043 |
+| 4 | `Debtor` | 0,037 |
+| 5 | `Curricular_units_1st_sem_enrolled` | 0,032 |
+| 6 | `Gender` | 0,028 |
+| 7 | `Scholarship_holder` | 0,028 |
+| 8 | `Curricular_units_2nd_sem_enrolled` | 0,027 |
+| 9 | `Curricular_units_2nd_sem_credited` | 0,024 |
+| 10 | `Curricular_units_2nd_sem_grade` | 0,024 |
+
+Dua fitur teratas menyumbang **~39%** total importance: **jumlah mata kuliah lulus di semester 2** dan **status pembayaran UKT**. Keduanya bisa dipantau langsung oleh sistem akademik — tidak perlu kuesioner atau data tambahan.
+
+---
+
+## ⚠️ Keterbatasan & Asumsi
+
+Bagian ini penting untuk menilai kesiapan model sebelum dipakai di produksi:
+
+1. **Risiko keterlambatan deteksi.** Fitur terkuat berasal dari **semester 2**, artinya model paling akurat setelah mahasiswa menempuh hampir satu tahun. Untuk intervensi yang benar-benar dini, perlu model terpisah yang hanya memakai data semester 1 / saat pendaftaran (trade-off: akurasi lebih rendah, tetapi *lead time* lebih panjang).
+2. **Evaluasi single split.** Metrik berasal dari satu *train-test split* (80:20). Belum ada validasi silang berulang atau uji pada angkatan berbeda, sehingga angka 88,47% bisa sedikit optimistis.
+3. **Belum ada validasi temporal.** Idealnya model dilatih pada angkatan lama dan diuji pada angkatan terbaru untuk meniru kondisi pemakaian nyata.
+4. **SMOTE pada data yang sudah di-scale.** Praktik yang lebih aman adalah menerapkan SMOTE sebelum scaling atau memakai `Pipeline` agar seluruh transformasi ter-*fit* di dalam CV.
+5. **Ambang keputusan masih default (0,5).** Untuk kasus dropout, ambang lebih rendah (mis. 0,35) akan menaikkan recall dan menangkap lebih banyak mahasiswa berisiko — perlu dikalibrasi bersama tim akademik sesuai kapasitas intervensi.
+6. **Korelasi ≠ kausalitas.** Feature importance menunjukkan asosiasi, bukan sebab-akibat. Rekomendasi di bawah adalah hipotesis yang perlu diuji lewat pilot program.
+
+---
+
+## 💡 Rekomendasi Action Items
+
+Disusun berdasarkan prioritas **dampak × kemudahan eksekusi**.
+
+### Prioritas 1 — Sistem Peringatan Dini Akademik (dampak tinggi, cepat)
+
+- **Aktifkan skoring risiko tiap akhir semester**, fokus pada indikator `Curricular_units_2nd_sem_approved` dan nilai semester.
+- **Aturan triage sederhana:** mahasiswa dengan **< 3 mata kuliah lulus** di semester mana pun otomatis masuk daftar pantau dosen pembimbing akademik (DPA) — selaras dengan temuan bahwa rata-rata mahasiswa dropout hanya lulus 1,94 MK.
+- **Bekali DPA dengan skor risiko** mahasiswa bimbingannya; wajibkan minimal satu sesi konseling terstruktur untuk kelompok risiko tinggi.
+
+### Prioritas 2 — Deteksi & Intervensi Finansial (dampak tinggi)
+
+- **Picu notifikasi otomatis** ke unit kemahasiswaan saat mahasiswa masuk status `Debtor` atau UKT tidak lancar — segmen ini memiliki dropout rate **86,6%**, tertinggi di seluruh dataset.
+- **Sediakan skema cicilan / penundaan bersyarat / beasiswa darurat** dengan evaluasi per kasus, sebelum tunggakan berlanjut ke semester berikutnya.
+- **Perluas cakupan beasiswa** — penerima beasiswa hanya mengalami dropout 12,2%, menjadikannya intervensi dengan rasio manfaat-biaya terbaik.
+
+### Prioritas 3 — Program Dukungan Berbasis Profil (dampak menengah)
+
+- **Mentoring untuk mahasiswa laki-laki** dan program studi dengan dropout rate tertinggi (identifikasi via dashboard), mengingat gap gender 45,1% vs 25,1%.
+- **Dukungan khusus mahasiswa dewasa/mandiri** (usia masuk rata-rata 23,3 tahun, maksimum 70) yang perlu menyeimbangkan kuliah dengan pekerjaan dan keluarga.
+- **Layanan konseling psikososial** yang peka gender dan inklusif.
+
+### Prioritas 4 — Budaya Keputusan Berbasis Data (jangka panjang)
+
+- **Jadikan dashboard Metabase sebagai rujukan rutin** di level rektorat, dekanat, dan ketua program studi untuk memantau tren dropout per semester.
+- **Latih staf** (DPA, admin, tim konseling) membaca dashboard dan menginterpretasikan skor risiko.
+- **Integrasikan output model ke Sistem Informasi Akademik / LMS** agar daftar mahasiswa berisiko muncul otomatis, bukan lewat file manual.
+
+### Prioritas 5 — Tata Kelola & Evaluasi
+
+- **Bentuk gugus tugas lintas fungsi** penurunan angka dropout (pimpinan, fakultas, DPA, kemahasiswaan, perwakilan mahasiswa).
+- **Evaluasi dampak per semester:** bandingkan dropout rate kelompok yang diintervensi vs kontrol, ukur *lift* dari program.
+- **Kumpulkan umpan balik kualitatif** dari mahasiswa berisiko dan staf untuk menyempurnakan SOP intervensi.
+
+### KPI yang Disarankan
+
+| KPI | Baseline | Target (1 tahun) |
+|---|---|---|
+| Dropout rate keseluruhan | 32,1% | < 28% |
+| Dropout pada mahasiswa dengan tunggakan UKT | 86,6% | < 70% |
+| Mahasiswa berisiko tinggi yang menerima intervensi | — | ≥ 80% |
+| Waktu dari deteksi risiko → intervensi pertama | — | ≤ 14 hari |
+
+---
+
+## 📈 Business Dashboard (Metabase)
+
+Dashboard terhubung ke database dan menyajikan:
+
+- **Ringkasan umum** — total mahasiswa, proporsi dropout, distribusi status
+- **Faktor risiko** — perbandingan rata-rata nilai, gender, status UKT
+- **Analisis per program studi & status pernikahan** — 5 prodi dengan dropout tertinggi
+- **Daftar mahasiswa berisiko tinggi** — untuk tindak lanjut langsung
+
+**Cuplikan layar:**
+
+| Ringkasan Umum | Faktor Risiko |
+|---|---|
+| ![Dashboard 1](Insight/zulfahmi17z_dashboard.jpg) | ![Dashboard 2](Insight/zulfahmi17z_dashboard%281%29.jpg) |
+
+| Per Prodi & Status Pernikahan | Daftar Mahasiswa Berisiko |
+|---|---|
+| ![Dashboard 3](Insight/zulfahmi17z_dashboard%282%29.jpg) | ![Dashboard 4](Insight/zulfahmi17z_dashboard%284%29.jpg) |
+
+**Akun demo Metabase** (instance lokal, hanya untuk keperluan demonstrasi):
+
+- Email: `root@mail.com`
+- Password: `root123`
+
+> ⚠️ Kredensial di atas adalah untuk instance demo lokal. Jangan gunakan ulang di lingkungan produksi.
+
+---
+
+## 🚀 Cara Menjalankan
+
+### 1. Prasyarat
+
+- Python **3.10+** — cek dengan `python --version`
+
+### 2. Clone & Setup
 
 ```bash
-# Membuat virtual environment
+git clone https://github.com/7z1x/student-dropout-prediction.git
+cd student-dropout-prediction
+
 python -m venv venv
 
-# Aktivasi environment
 # Windows
 venv\Scripts\activate
 
-# MacOS/Linux
+# macOS / Linux
 source venv/bin/activate
 
-# Install dependensi
 pip install -r requirements.txt
-
 ```
 
-### Menjalankan Script Prediksi
+### 3. Jalankan Aplikasi Prediksi (Streamlit)
+
+```bash
+streamlit run app.py
+```
+
+Buka `http://localhost:8501`, isi form data mahasiswa, lalu klik **Predict Status** untuk melihat status prediksi beserta probabilitas tiap kelas.
+
+Aplikasi membutuhkan tiga artefak di folder `model/`:
+
+- `dropout_model.joblib` — model XGBoost terlatih
+- `scaler.joblib` — `StandardScaler` hasil training
+- `feature_order.joblib` — urutan kolom fitur (wajib sama dengan saat training)
+
+### 4. Uji Prediksi via CLI
 
 ```bash
 python test_predict.py
 ```
 
----
+### 5. Reproduksi Analisis
 
-## 📊 Business Dashboard
-
-Dashboard ini dibangun menggunakan Metabase yang terhubung ke database PostgreSQL. Dashboard ini menampilkan informasi visual terkait:
-
-- Jumlah siswa dropout vs non-dropout per semester
-- Distribusi performa akademik siswa
-- Analisis berdasarkan gender, tingkat pendidikan orang tua, dan faktor lainnya
-- Daftar siswa dengan prediksi risiko dropout
-
-### Akun Metabase
-
-- Email: `root@mail.com`
-- Password: `root123`
-
-### Cuplikan Layar Dasbor
-Berikut adalah beberapa contoh tampilan dasbor yang memberikan wawasan kunci:
-
-* **Dasbor Ringkasan Umum:**
-    Menampilkan gambaran keseluruhan metrik penting seperti total mahasiswa, persentase prediksi dropout, dan disribusi mahasiswa.
-  
-  ![ringkasan](https://github.com/user-attachments/assets/12063625-519f-43ae-ba2e-cc5981667623)
-
-* **Analisis Faktor Risiko Dropout:**
-    Menyajikan visualisasi berbagai faktor yang berkontribusi terhadap risiko dropout, membantu identifikasi pola dan area fokus.
-    * **Faktor-faktor Umum:** Perbandingan rata-rata nilai, gender, dan status pembayaran UKT.
-      
-        ![Analisis Faktor Risiko Umum](https://github.com/user-attachments/assets/9d1c9e5b-b92e-409f-bd09-d1566d114539)
-  
-    * **Berdasarkan Program Studi dan Status Pernikahan:** Menampilkan 5 program studi dengan tingkat *dropout* tertinggi serta distribusi *dropout* berdasarkan status pernikahan mahasiswa.
-      
-        ![Analisis Dropout per Prodi dan Status Pernikahan](https://github.com/user-attachments/assets/36b584d9-d591-4ae9-9350-891aed37a7e0)
-      
-    * **Perbandingan Mahasiswa Internasional dan Lokal:** Menunjukkan perbedaan tingkat *dropout* antara mahasiswa internasional dan mahasiswa lokal.
-      
-        ![Analisis Dropout Internasional vs Lokal](https://github.com/user-attachments/assets/9eb94a5e-8267-4933-b456-d1022c7aeff3)
-
-* **Daftar Mahasiswa Berisiko Tinggi untuk Tindak Lanjut:**
-    Menyajikan daftar mahasiswa yang teridentifikasi memiliki risiko dropout tinggi, memungkinkan intervensi yang lebih fokus.
-  
-  ![zulfahmi17z_dashboard(4)](https://github.com/user-attachments/assets/d4f8fd97-17c3-4a67-9254-33c2db5a8a35)
-
-
-### Video Penjelasan : 
-[Tonton di Google Drive](https://drive.google.com/file/d/1tGv-VZaOavT4nUHSdPltAfbsRvWfl0Oy/view?usp=drive_link)
+Buka `notebook.ipynb` (disarankan lewat Google Colab atau Jupyter) untuk menjalankan ulang seluruh pipeline: EDA → preparation → modeling → evaluasi → export model.
 
 ---
 
-## 🚀 Menjalankan Sistem Machine Learning
-
-Sistem prototype ini dibangun menggunakan Streamlit dan dapat digunakan oleh pihak akademik untuk memprediksi status dropout siswa berdasarkan data input.
-
-### Langkah-Langkah Menjalankan Aplikasi Prototype
-
-1. **Pastikan Python Sudah Terinstal**  
-   Aplikasi ini membutuhkan Python versi 3.10 atau lebih tinggi. Cek versi Python dengan perintah:
-   ```bash
-   python --version
-   ```
-
-2. **Clone atau Unduh Proyek Ini**  
-   Jika Anda belum memiliki folder proyek, unduh dari GitHub atau salin dengan git:
-   ```bash
-   git clone https://github.com/7z1x/Menyelesaikan-Permasalahan-Institusi-Pendidikan.git
-   cd Menyelesaikan-Permasalahan-Institusi-Pendidikan
-   ```
-
-3.  **Buat dan Aktifkan Virtual Environment** (Sangat Direkomendasikan):
-     ```
-     python -m venv venv
-     ```
-     * Di Linux/Mac:
-       ```
-       source venv/bin/activate
-       ```
-     * Di Windows:
-       ```
-       venv\Scripts\activate
-       ```
-
-4. **Install Semua Dependency**  
-   Pastikan Anda berada di dalam folder proyek dan jalankan:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. **Pastikan File Model dan Script Tersedia**  
-   Pastikan file `app.py` dan (`model/dropout_model.joblib`), scaler 
-   (`model/scaler.joblib`), dan urutan fitur (`model/feature_order.joblib`) ada 
-   di direktori `model/`.
-
-6. **Jalankan Aplikasi Streamlit**  
-   Gunakan perintah berikut untuk menjalankan prototipe:
-   ```bash
-   streamlit run app.py
-   ```
-
-7. **Akses Aplikasi di Browser**  
-   Setelah menjalankan perintah tersebut, browser akan otomatis membuka halaman prototipe. Jika tidak terbuka, akses secara manual melalui:
-   ```
-   http://localhost:8501
-   ```
-
-### 🔗 Akses Prototipe
-
-Anda juga bisa langsung mencoba prototipe yang sudah dideploy tanpa menginstal apa pun melalui link berikut:
-
-🌐 [Drop-out-predict.streamlit.app](https://drop-out-predict.streamlit.app/)
-
----
-
-
-## 🌟 Conclusion
-
-Berdasarkan analisis data dan pemodelan prediktif yang telah dilakukan, sistem berhasil mengidentifikasi mahasiswa berisiko *dropout* dengan akurasi pada data uji mencapai **0.8847** (atau **88.47%**) menggunakan model XGBoost. Beberapa faktor kunci yang teridentifikasi signifikan memengaruhi risiko *dropout* mahasiswa di Institut Jaya Jaya antara lain:
-* **Performa Akademik Awal:** Nilai pada semester pertama dan kedua (`Curricular units 1st sem (grade)`, `Curricular units 2nd sem (grade)`) menjadi indikator kuat. Perolehan nilai yang rendah secara konsisten berkorelasi dengan peningkatan risiko *dropout*.
-* **Status Keuangan:** Terutama kelancaran pembayaran UKT (`Tuition fees up to date`) dan status (`Debtor`). Mahasiswa dengan kesulitan finansial menunjukkan risiko *dropout* yang lebih tinggi.
-* **Karakteristik Demografis dan Pribadi:** Faktor seperti usia saat pendaftaran (`Age at enrollment`), status pernikahan (`Marital status`), dan jenis kelamin (`Gender`) juga menunjukkan kontribusi terhadap variasi tingkat *dropout*.
-* **Status Beasiswa (`Scholarship holder`):** Terdapat perbedaan profil risiko antara mahasiswa penerima beasiswa dan yang tidak, yang memerlukan perhatian khusus.
-
-Pemahaman mendalam terhadap faktor-faktor ini, didukung oleh model prediksi yang akurat dan visualisasi dasbor, memberikan landasan kuat bagi Institut Jaya Jaya untuk merancang strategi intervensi yang lebih efektif dan terarah guna menekan angka *dropout* dan meningkatkan tingkat kelulusan mahasiswa.
-
----
-
-### Rekomendasi Action Items
-Untuk mengatasi permasalahan *dropout* mahasiswa secara strategis dan mencapai target peningkatan angka kelulusan, berikut adalah rekomendasi tindak lanjut yang dapat diimplementasikan oleh pimpinan Institut Jaya Jaya:
-
-1.  **Penguatan Sistem Pendampingan Akademik Personal dan Responsif:**
-    * **Monitoring Intensif Performa Akademik Awal:** Fokuskan perhatian pada mahasiswa dengan perolehan nilai rendah di semester 1 dan 2 (`Curricular units 1st sem (grade)`, `Curricular units 2nd sem (grade)`), sebagaimana teridentifikasi oleh model dan dasbor.
-    * **Program Intervensi Akademik Terpadu:** Sediakan program pendampingan akademik yang lebih intensif dan personal, seperti kelompok belajar kecil, sesi tutorial tambahan dengan asisten dosen atau mahasiswa senior berprestasi, dan tutor mata kuliah untuk subjek-subjek sulit.
-    * **Optimalisasi Peran Dosen Pembimbing Akademik (DPA):** Bekali DPA dengan data prediksi risiko mahasiswa bimbingannya. Wajibkan sesi konseling proaktif dan terstruktur dengan mahasiswa berisiko untuk membahas tantangan akademik, strategi belajar, dan penyesuaian rencana studi jika diperlukan.
-
-2. **Implementasi Program Dukungan Keuangan dan Konseling Proaktif:**
-    * **Deteksi Dini Kesulitan Finansial:** Manfaatkan sistem prediksi dan dasbor Metabase untuk secara *real-time* mengidentifikasi mahasiswa yang menunjukkan tanda-tanda kesulitan pembayaran UKT (berdasarkan fitur `Tuition fees up to date` dan `Debtor`).
-    * **Intervensi Keuangan Terstruktur:** Segera tindak lanjuti mahasiswa teridentifikasi dengan menawarkan skema bantuan keuangan yang fleksibel (cicilan, penundaan dengan syarat), program beasiswa darurat, atau bantuan keringanan biaya berdasarkan evaluasi kasus per kasus. Sediakan layanan konseling manajemen keuangan bagi mahasiswa.
-    * **Pengembangan Sistem Peringatan Dini Keuangan:** Integrasikan notifikasi otomatis ke tim dukungan kemahasiswaan atau DPA ketika mahasiswa terdeteksi memiliki risiko finansial tinggi.
-
-3. **Pengembangan Kebijakan dan Program Dukungan Holistik Berbasis Profil Risiko Mahasiswa:**
-    * **Analisis Lanjutan Faktor Risiko Spesifik:** Lakukan kajian lebih mendalam terhadap bagaimana faktor-faktor seperti status beasiswa (`Scholarship holder`), usia saat masuk (`Age at enrollment`), status pernikahan (`Marital status`), dan jenis kelamin (`Gender`) berinteraksi dan memengaruhi keputusan *dropout* di konteks Institut Jaya Jaya.
-    * **Desain Program Dukungan yang Disesuaikan:** Kembangkan program dukungan yang spesifik untuk kelompok mahasiswa dengan profil risiko tertentu. Contoh: program mentoring khusus untuk mahasiswa penerima beasiswa agar dapat mempertahankan standar akademik; layanan dukungan bagi mahasiswa yang sudah menikah atau bekerja untuk membantu menyeimbangkan studi dengan tanggung jawab lain; program pengembangan komunitas dan dukungan psikososial yang peka gender.
-    * **Penciptaan Lingkungan Kampus yang Mendukung dan Inklusif:** Pastikan semua kebijakan dan layanan kemahasiswaan dirancang untuk menciptakan lingkungan belajar yang positif, suportif, dan inklusif bagi seluruh mahasiswa, tanpa memandang latar belakang mereka.
-
-4.  **Pemanfaatan Maksimal Dasbor Metabase dan Integrasi Sistem untuk Pengambilan Keputusan Strategis:**
-    * **Budaya Pengambilan Keputusan Berbasis Data:** Dorong penggunaan dasbor Metabase di semua tingkatan manajemen (rektorat, dekanat, ketua program studi) sebagai alat utama untuk memantau tren *dropout* secara berkala, mengevaluasi efektivitas program intervensi yang berjalan, dan membuat keputusan strategis yang terinformasi.
-    * **Pelatihan dan Kapasitasi Pengguna Dasbor:** Selenggarakan pelatihan reguler bagi staf akademik dan non-akademik terkait (dosen, DPA, staf administrasi, tim konseling) agar mahir dalam mengakses, menggunakan, dan menginterpretasikan data serta *insight* yang disajikan oleh dasbor.
-    * **Roadmap Integrasi Sistem Informasi:** Susun rencana strategis untuk mengintegrasikan output model prediksi (misalnya, daftar mahasiswa berisiko tinggi) dan *insight* kunci dari dasbor Metabase ke dalam Sistem Informasi Akademik atau sistem manajemen pembelajaran (LMS) yang ada. Tujuannya adalah untuk mempermudah akses informasi dan koordinasi tindak lanjut oleh berbagai unit terkait secara *real-time* dan efisien.
-
-5.  **Pembentukan Tim Gugus Tugas Penurunan Angka Dropout dan Evaluasi Berkelanjutan:**
-    * **Tim Gugus Tugas Lintas Fungsi:** Bentuk tim khusus yang terdiri dari perwakilan pimpinan, fakultas, tim dukungan mahasiswa, DPA, dan bahkan perwakilan mahasiswa untuk secara aktif merancang, mengimplementasikan, dan memonitor strategi penurunan angka *dropout*.
-    * **Siklus Evaluasi dan Iterasi Program:** Tetapkan mekanisme untuk evaluasi rutin (misalnya, per semester atau per tahun) terhadap dampak dari semua program intervensi yang dijalankan. Gunakan data dari dasbor dan model untuk mengukur keberhasilan dan mengidentifikasi area yang memerlukan perbaikan atau pendekatan baru.
-    * **Pengumpulan Umpan Balik Kualitatif:** Selain data kuantitatif, secara aktif kumpulkan umpan balik dari mahasiswa (terutama yang berisiko atau yang berhasil dicegah dari *dropout*), dosen, dan staf mengenai tantangan yang dihadapi dan efektivitas program dukungan yang ada untuk penyempurnaan berkelanjutan.
-
-Dengan mengimplementasikan rekomendasi ini secara komprehensif dan berkelanjutan, Institut Jaya Jaya diharapkan dapat secara signifikan mengurangi angka *dropout* mahasiswa dan mencapai target peningkatan angka kelulusan serta kualitas lulusan.
-
----
-## 🗂️ Struktur Folder Proyek
+## 🗂️ Struktur Proyek
 
 ```
-submission/
+student-dropout-prediction/
 │
-├── Insight/
-│   └── zulfahmi17z_dashboard(1).jpg
-│   └── zulfahmi17z_dashboard(2).jpg
-│   └── zulfahmi17z_dashboard(3).jpg
-│   └── zulfahmi17z_dashboard(4).jpg
-│   └── zulfahmi17z_dashboard.jpg
-│   └── zulfahmi17z_video.mov 
+├── Insight/                          # Screenshot dashboard & video presentasi
+│   ├── zulfahmi17z_dashboard.jpg
+│   ├── zulfahmi17z_dashboard(1..4).jpg
+│   └── zulfahmi17z_video.mp4
 │
 ├── dataset/
-│   └── data.csv
-│ 
-├── model/
-│   └── dropout_model.joblib
-│   └── feature_order.joblib
-│   └── scaler.joblib
+│   └── data.csv                      # 4.424 baris, delimiter ';'
 │
-├── app.py 
-├── metabase.db.mv.db 
-├── notebook.ipynb
+├── model/                            # Artefak model terlatih
+│   ├── dropout_model.joblib
+│   ├── scaler.joblib
+│   └── feature_order.joblib
+│
+├── app.py                            # Aplikasi prediksi Streamlit
+├── test_predict.py                   # Skrip prediksi via CLI
+├── notebook.ipynb                    # EDA, modeling, evaluasi
+├── metabase.db.mv.db                 # Database Metabase (H2)
 ├── requirements.txt
-├── test_predict.py
 └── README.md
 ```
 
 ---
+
+## 🛠️ Tech Stack
+
+| Kategori | Tools |
+|---|---|
+| Bahasa | Python 3.10+ |
+| Analisis data | pandas, NumPy |
+| Machine learning | scikit-learn, XGBoost, imbalanced-learn (SMOTE) |
+| Visualisasi | Matplotlib, Seaborn |
+| Deployment model | Streamlit |
+| Business intelligence | Metabase |
+| Model persistence | joblib |
+
+---
+
+## 🔭 Pengembangan Selanjutnya
+
+- [ ] Model **early-warning tahap awal** memakai hanya data pendaftaran + semester 1
+- [ ] Kalibrasi ambang keputusan (precision-recall curve) sesuai kapasitas intervensi
+- [ ] Validasi temporal: latih pada angkatan lama, uji pada angkatan baru
+- [ ] Refactor ke `sklearn.Pipeline` untuk mencegah leakage dan mempermudah deployment
+- [ ] Uji signifikansi statistik untuk gap gender dan perbedaan antar prodi
+- [ ] Integrasi API skoring ke Sistem Informasi Akademik
+- [ ] Tambahkan unit test untuk `app.py` dan `test_predict.py`
+
+---
+
+## 👤 Author
+
+**Zulfahmi M. Ardianto**
+Laskar ID: A548YBM523
+
+Proyek ini disusun sebagai bagian dari pembelajaran Data Science / Data Analyst.
+
+---
+
+## 📄 Lisensi & Atribusi
+
+Dataset berasal dari [Dicoding Academy](https://github.com/dicodingacademy/dicoding_dataset) (UCI Machine Learning Repository — *Predict Students' Dropout and Academic Success*). Kode dalam repositori ini bebas digunakan untuk keperluan pembelajaran.
